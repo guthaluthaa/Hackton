@@ -1,0 +1,27 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+*.exe
+
+## IDE
+.vs/
+.vscode/
+*.swp
+.idea/
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Docker
+docker/postgres_data/
+docker/minio_data/
+
+## Environment
+.env
+appsettings.*.local.json

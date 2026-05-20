@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="MassTransit" Version="8.4.0" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="Minio" Version="6.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Domain\UploadService.Domain\UploadService.Domain.csproj" />
+    <ProjectReference Include="..\..\..\shared\Shared\Shared.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,148 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hackton-postgres
+    environment:
+      POSTGRES_USER: hackton
+      POSTGRES_PASSWORD: hackton123
+      POSTGRES_MULTIPLE_DATABASES: upload_db,orchestrator_db,report_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hackton"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: hackton-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: hackton
+      RABBITMQ_DEFAULT_PASS: hackton123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: hackton-minio
+    environment:
+      MINIO_ROOT_USER: hackton
+      MINIO_ROOT_PASSWORD: hackton123
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  seq:
+    image: datalust/seq:latest
+    container_name: hackton-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: hackton123
+    ports:
+      - "5341:5341"
+      - "8081:80"
+    volumes:
+      - seq_data:/data
+
+  gateway:
+    build:
+      context: ../
+      dockerfile: src/gateway/Gateway/Dockerfile
+    container_name: hackton-gateway
+    ports:
+      - "5000:8080"
+    depends_on:
+      - upload-service
+      - orchestrator-service
+      - report-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  upload-service:
+    build:
+      context: ../
+      dockerfile: src/upload-service/API/UploadService.API/Dockerfile
+    container_name: hackton-upload-service
+    ports:
+      - "5001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=upload_db;Username=hackton;Password=hackton123
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=hackton
+      - RabbitMq__Password=hackton123
+      - MinIO__Endpoint=minio:9000
+      - MinIO__AccessKey=hackton
+      - MinIO__SecretKey=hackton123
+      - MinIO__BucketName=uploads
+      - Seq__Url=http://seq:5341
+
+  orchestrator-service:
+    build:
+      context: ../
+      dockerfile: src/orchestrator-service/API/OrchestratorService.API/Dockerfile
+    container_name: hackton-orchestrator-service
+    ports:
+      - "5002:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=orchestrator_db;Username=hackton;Password=hackton123
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=hackton
+      - RabbitMq__Password=hackton123
+      - Seq__Url=http://seq:5341
+
+  report-service:
+    build:
+      context: ../
+      dockerfile: src/report-service/API/ReportService.API/Dockerfile
+    container_name: hackton-report-service
+    ports:
+      - "5003:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=report_db;Username=hackton;Password=hackton123
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=hackton
+      - RabbitMq__Password=hackton123
+      - Seq__Url=http://seq:5341
+
+volumes:
+  postgres_data:
+  minio_data:
+  seq_data:
