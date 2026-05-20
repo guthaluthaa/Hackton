@@ -24,4 +24,9 @@ docker/minio_data/
 
 ## Environment
 .env
+.env.*
+!.env.example
 appsettings.*.local.json
+**/secrets/
+*.pfx
+*.key

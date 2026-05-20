@@ -3,16 +3,16 @@ services:
     image: postgres:16-alpine
     container_name: hackton-postgres
     environment:
-      POSTGRES_USER: hackton
-      POSTGRES_PASSWORD: hackton123
-      POSTGRES_MULTIPLE_DATABASES: upload_db,orchestrator_db,report_db
+      POSTGRES_USER: ${POSTGRES_USER:-hackton}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hackton123}
+      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_MULTIPLE_DATABASES:-upload_db,orchestrator_db,report_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hackton"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hackton}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,8 +21,8 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: hackton-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: hackton
-      RABBITMQ_DEFAULT_PASS: hackton123
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-hackton}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-hackton123}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -36,8 +36,8 @@ services:
     image: minio/minio:latest
     container_name: hackton-minio
     environment:
-      MINIO_ROOT_USER: hackton
-      MINIO_ROOT_PASSWORD: hackton123
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-hackton}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-hackton123}
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
@@ -55,7 +55,7 @@ services:
     container_name: hackton-seq
     environment:
       ACCEPT_EULA: "Y"
-      SEQ_FIRSTRUN_ADMINPASSWORD: hackton123
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD:-hackton123}
     ports:
       - "5341:5341"
       - "8081:80"
@@ -74,7 +74,7 @@ services:
       - orchestrator-service
       - report-service
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
 
   upload-service:
     build:
@@ -91,15 +91,15 @@ services:
       minio:
         condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=upload_db;Username=hackton;Password=hackton123
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=upload_db;Username=${POSTGRES_USER:-hackton};Password=${POSTGRES_PASSWORD:-hackton123}
       - RabbitMq__Host=rabbitmq
-      - RabbitMq__Username=hackton
-      - RabbitMq__Password=hackton123
+      - RabbitMq__Username=${RABBITMQ_USER:-hackton}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-hackton123}
       - MinIO__Endpoint=minio:9000
-      - MinIO__AccessKey=hackton
-      - MinIO__SecretKey=hackton123
-      - MinIO__BucketName=uploads
+      - MinIO__AccessKey=${MINIO_ROOT_USER:-hackton}
+      - MinIO__SecretKey=${MINIO_ROOT_PASSWORD:-hackton123}
+      - MinIO__BucketName=${MINIO_BUCKET:-uploads}
       - Seq__Url=http://seq:5341
 
   orchestrator-service:
@@ -115,11 +115,11 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=orchestrator_db;Username=hackton;Password=hackton123
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=orchestrator_db;Username=${POSTGRES_USER:-hackton};Password=${POSTGRES_PASSWORD:-hackton123}
       - RabbitMq__Host=rabbitmq
-      - RabbitMq__Username=hackton
-      - RabbitMq__Password=hackton123
+      - RabbitMq__Username=${RABBITMQ_USER:-hackton}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-hackton123}
       - Seq__Url=http://seq:5341
 
   report-service:
@@ -135,11 +135,11 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=report_db;Username=hackton;Password=hackton123
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=report_db;Username=${POSTGRES_USER:-hackton};Password=${POSTGRES_PASSWORD:-hackton123}
       - RabbitMq__Host=rabbitmq
-      - RabbitMq__Username=hackton
-      - RabbitMq__Password=hackton123
+      - RabbitMq__Username=${RABBITMQ_USER:-hackton}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-hackton123}
       - Seq__Url=http://seq:5341
 
 volumes:
