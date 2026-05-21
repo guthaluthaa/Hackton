@@ -13,9 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Application\OrchestratorService.Application\OrchestratorService.Application.csproj" />
-    <ProjectReference Include="..\..\Domain\OrchestratorService.Domain\OrchestratorService.Domain.csproj" />
-    <ProjectReference Include="..\..\..\shared\Shared\Shared.csproj" />
+    <ProjectReference Include="../../Application/OrchestratorService.Application/OrchestratorService.Application.csproj" />
+    <ProjectReference Include="../../Domain/OrchestratorService.Domain/OrchestratorService.Domain.csproj" />
+    <ProjectReference Include="../../../shared/Shared/Shared.csproj" />
   </ItemGroup>
 
 </Project>

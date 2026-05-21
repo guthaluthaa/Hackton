@@ -21,9 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\shared\Shared\Shared.csproj" />
-    <ProjectReference Include="..\..\Application\ReportService.Application\ReportService.Application.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\ReportService.Infrastructure\ReportService.Infrastructure.csproj" />
+    <ProjectReference Include="../../../shared/Shared/Shared.csproj" />
+    <ProjectReference Include="../../Application/ReportService.Application/ReportService.Application.csproj" />
+    <ProjectReference Include="../../Infrastructure/ReportService.Infrastructure/ReportService.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

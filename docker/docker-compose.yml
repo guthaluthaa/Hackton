@@ -68,13 +68,16 @@ services:
       dockerfile: src/gateway/Gateway/Dockerfile
     container_name: hackton-gateway
     ports:
-      - "5000:8080"
+      - "5010:8080"
     depends_on:
       - upload-service
       - orchestrator-service
       - report-service
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ReverseProxy__Clusters__upload-cluster__Destinations__destination1__Address=http://upload-service:8080
+      - ReverseProxy__Clusters__orchestrator-cluster__Destinations__destination1__Address=http://orchestrator-service:8080
+      - ReverseProxy__Clusters__report-cluster__Destinations__destination1__Address=http://report-service:8080
 
   upload-service:
     build:
@@ -141,6 +144,33 @@ services:
       - RabbitMq__Username=${RABBITMQ_USER:-hackton}
       - RabbitMq__Password=${RABBITMQ_PASSWORD:-hackton123}
       - Seq__Url=http://seq:5341
+
+  analysis-service:
+    build:
+      context: ../
+      dockerfile: src/analysis-service/Dockerfile
+    container_name: hackton-analysis-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-hackton}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-hackton123}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-hackton}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-hackton123}
+      - MINIO_BUCKET=${MINIO_BUCKET:-uploads}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-opus-4-5}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    restart: unless-stopped
 
 volumes:
   postgres_data:

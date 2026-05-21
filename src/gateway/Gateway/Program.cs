@@ -35,4 +35,7 @@ finally
     Log.CloseAndFlush();
 }
 
-public partial class Program { }
+namespace Gateway
+{
+    public partial class Program { }
+}
