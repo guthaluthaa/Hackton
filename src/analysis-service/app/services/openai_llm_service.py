@@ -98,8 +98,10 @@ class OpenAILLMService:
         result, reason = validate_and_parse_llm_response(raw_text)
         if result is None:
             self.last_rejection_reason = reason
-            logger.warning(
-                "[OpenAI] LLM raw response rejected by guardrails: %s\n%s",
-                reason, raw_text[:2000],
+            logger.error(
+                "[OpenAI] Resposta do LLM rejeitada pelos guardrails\n"
+                "  Motivo: %s\n"
+                "  Resposta bruta (primeiros 500 chars): %s",
+                reason, raw_text[:500],
             )
         return result

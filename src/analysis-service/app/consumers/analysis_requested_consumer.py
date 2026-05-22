@@ -44,7 +44,11 @@ class AnalysisRequestedConsumer:
                 llm_api_key = body.get("llmApiKey", "")
 
                 logger.info(
-                    "[PIPELINE START] job_id=%s | file=%s | provider=%s",
+                    "========== NOVA ANÁLISE RECEBIDA ==========\n"
+                    "  Job ID:    %s\n"
+                    "  Arquivo:   %s\n"
+                    "  Provedor:  %s\n"
+                    "============================================",
                     job_id, file_path, llm_provider or "(env default)",
                 )
 
@@ -92,25 +96,35 @@ class AnalysisRequestedConsumer:
 
             # Step 3: LLM analysis
             logger.info(
-                "[STEP 3/5] Sending to LLM for analysis (security + scalability + architecture) | job_id=%s",
-                job_id,
+                "[IA INÍCIO] Enviando diagrama para análise com IA | job_id=%s | provider=%s | imagens=%d",
+                job_id, effective_provider, len(images_b64),
             )
             llm_start = time.perf_counter()
             result = llm.analyze_images(images_b64, media_type)
             llm_ms = (time.perf_counter() - llm_start) * 1000
-            logger.info(
-                "[STEP 3/5] LLM response received | job_id=%s | elapsed=%.0fms | valid=%s",
-                job_id, llm_ms, result is not None,
-            )
+            if result is not None:
+                logger.info(
+                    "[IA CONCLUÍDA] Análise da IA finalizada com sucesso | job_id=%s | tempo=%.0fms",
+                    job_id, llm_ms,
+                )
+            else:
+                llm_error = getattr(llm, "last_rejection_reason", "") or "Resposta inválida ou vazia"
+                logger.error(
+                    "[IA ERRO] A IA retornou uma resposta inválida | job_id=%s | tempo=%.0fms | erro=%s",
+                    job_id, llm_ms, llm_error,
+                )
 
             if result is None:
                 failure_reason = getattr(llm, "last_rejection_reason", "") or "Não foi possível gerar uma análise válida para o diagrama fornecido"
                 await publisher.publish_failed(job_id, failure_reason)
                 total_ms = (time.perf_counter() - total_start) * 1000
                 logger.warning(
-                    "[PIPELINE FAILED] job_id=%s | total_elapsed=%.0fms | "
-                    "reason=%s",
-                    job_id, total_ms, failure_reason,
+                    "========== ANÁLISE FALHOU ==========\n"
+                    "  Job ID:  %s\n"
+                    "  Motivo:  %s\n"
+                    "  Tempo:   %.0fms\n"
+                    "====================================",
+                    job_id, failure_reason, total_ms,
                 )
                 return
 
@@ -136,13 +150,26 @@ class AnalysisRequestedConsumer:
 
             total_ms = (time.perf_counter() - total_start) * 1000
             logger.info(
-                "[PIPELINE COMPLETE] job_id=%s | total_elapsed=%.0fms | "
-                "steps: download=%.0fms convert=%.0fms llm=%.0fms | "
-                "security_findings=%d | scalability_assessments=%d | risk_score=%s",
-                job_id, total_ms, download_ms, convert_ms, llm_ms,
+                "========== ANÁLISE CONCLUÍDA COM SUCESSO ==========\n"
+                "  Job ID:          %s\n"
+                "  Componentes:     %d identificados\n"
+                "  Riscos:          %d encontrados\n"
+                "  Recomendações:   %d geradas\n"
+                "  Segurança:       %d findings\n"
+                "  Escalabilidade:  %d avaliações\n"
+                "  Arquitetura:     %s\n"
+                "  Risk Score:      %s/10\n"
+                "  Tempo total:     %.0fms (download=%.0fms | conversão=%.0fms | IA=%.0fms)\n"
+                "====================================================",
+                job_id,
+                len(result.components),
+                len(result.risks),
+                len(result.recommendations),
                 len(result.security_findings or []),
                 len(result.scalability_assessments or []),
+                result.architecture_type,
                 result.overall_risk_score,
+                total_ms, download_ms, convert_ms, llm_ms,
             )
 
         except Exception as e:
