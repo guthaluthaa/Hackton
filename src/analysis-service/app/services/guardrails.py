@@ -248,6 +248,10 @@ def _is_actionable(text: str) -> bool:
         r"\b(ajustar|otimizar|melhorar|atualizar|definir)\b",
         r"\b(adjust|optimize|improve|update|define|set.?up)\b",
         r"\b(considerar|avaliar|planejar|estabelecer)\b",
+        r"\b(modificar|alterar|trocar|redesenhar|reestruturar|reduzir)\b",
+        r"\b(modify|change|swap|redesign|restructure|reduce|increase)\b",
+        r"\b(proteger|restringir|limitar|encapsular|centralizar)\b",
+        r"\b(protect|restrict|limit|encapsulate|centralize|decouple)\b",
     ]
     text_lower = text.lower()
     return any(re.search(p, text_lower) for p in actionable_patterns)
