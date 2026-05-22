@@ -16,14 +16,17 @@ RETRY_DELAY_SECONDS = 2
 
 
 class ClaudeLLMService:
-    def __init__(self):
-        self._client = anthropic.Anthropic(api_key=settings.claude_api_key)
+    def __init__(self, api_key: str = ""):
+        key = api_key or settings.claude_api_key
+        self._client = anthropic.Anthropic(api_key=key)
         self._model = settings.claude_model
+        self.last_rejection_reason: str = ""
         logger.info(f"ClaudeLLMService iniciado com modelo {self._model}")
 
     def analyze_images(
         self, images_base64: List[str], media_type: str = "image/png"
     ) -> Optional[AnalysisResult]:
+        self.last_rejection_reason = ""
         for attempt in range(1, MAX_RETRIES + 1):
             logger.info(f"[Claude] Tentativa {attempt}/{MAX_RETRIES}")
             try:
@@ -32,14 +35,17 @@ class ClaudeLLMService:
                     return result
                 logger.warning(f"[Claude] Tentativa {attempt}: resposta inválida")
             except anthropic.RateLimitError:
+                self.last_rejection_reason = "Limite de requisições da API atingido — tente novamente em alguns minutos"
                 logger.warning(f"[Claude] Rate limit na tentativa {attempt}")
                 time.sleep(RETRY_DELAY_SECONDS * attempt * 2)
             except anthropic.APIStatusError as e:
+                self.last_rejection_reason = f"Erro na API do provedor LLM: {e.status_code}"
                 logger.error(f"[Claude] Erro API tentativa {attempt}: {e.status_code} - {e.message}")
                 if attempt == MAX_RETRIES:
                     raise
                 time.sleep(RETRY_DELAY_SECONDS)
             except Exception as e:
+                self.last_rejection_reason = f"Erro inesperado durante análise: {str(e)[:150]}"
                 logger.error(f"[Claude] Erro inesperado tentativa {attempt}: {e}", exc_info=True)
                 if attempt == MAX_RETRIES:
                     raise
@@ -68,12 +74,21 @@ class ClaudeLLMService:
         start = time.time()
         response = self._client.messages.create(
             model=self._model,
-            max_tokens=2048,
+            max_tokens=4096,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": content}],
         )
+        raw_text = response.content[0].text
         logger.info(
             f"[Claude] {time.time() - start:.2f}s | "
             f"in={response.usage.input_tokens} out={response.usage.output_tokens}"
         )
-        return validate_and_parse_llm_response(response.content[0].text)
+
+        result, reason = validate_and_parse_llm_response(raw_text)
+        if result is None:
+            self.last_rejection_reason = reason
+            logger.warning(
+                "[Claude] LLM raw response rejected by guardrails: %s\n%s",
+                reason, raw_text[:2000],
+            )
+        return result

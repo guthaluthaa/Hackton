@@ -18,6 +18,8 @@ try
     builder.Host.UseSerilog((context, services, configuration) => configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("ServiceName", "OrchestratorService")
         .WriteTo.Console()
         .WriteTo.Seq(context.Configuration["Seq:Url"] ?? "http://localhost:5341"));
 
@@ -68,13 +70,22 @@ try
         await dbContext.Database.EnsureCreatedAsync();
     }
 
+    app.UseSerilogRequestLogging();
+
     // Minimal API endpoints
-    app.MapGet("/api/status/{jobId:guid}", async (Guid jobId, IMediator mediator) =>
+    app.MapGet("/api/status/{jobId:guid}", async (Guid jobId, IMediator mediator, ILogger<Program> logger) =>
     {
+        logger.LogInformation("GET /api/status/{JobId} requested", jobId);
+
         var job = await mediator.Send(new GetJobStatusQuery(jobId));
 
         if (job is null)
+        {
+            logger.LogWarning("Job {JobId} not found", jobId);
             return Results.NotFound(new { message = $"Job {jobId} not found" });
+        }
+
+        logger.LogInformation("Job {JobId} status: {Status}", jobId, job.Status);
 
         return Results.Ok(new
         {

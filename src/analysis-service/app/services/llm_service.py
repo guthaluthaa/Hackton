@@ -13,23 +13,24 @@ class LLMServiceProtocol(Protocol):
     ) -> Optional[AnalysisResult]: ...
 
 
-def get_llm_service() -> LLMServiceProtocol:
+def get_llm_service(provider: str = "", api_key: str = "") -> LLMServiceProtocol:
     """
-    Factory: retorna o serviço LLM configurado via LLM_PROVIDER.
-    Valores aceitos: "claude" (padrão) ou "openai".
+    Factory: retorna o serviço LLM configurado.
+    Se provider/api_key forem fornecidos (via request do usuário), usa-os.
+    Caso contrário, faz fallback para as variáveis de ambiente.
     """
-    provider = settings.llm_provider.lower()
+    effective_provider = (provider or settings.llm_provider).lower()
 
-    if provider == "openai":
+    if effective_provider == "openai":
         from app.services.openai_llm_service import OpenAILLMService
-        return OpenAILLMService()
+        return OpenAILLMService(api_key=api_key or settings.openai_api_key)
 
-    if provider == "claude":
+    if effective_provider == "claude":
         from app.services.claude_llm_service import ClaudeLLMService
-        return ClaudeLLMService()
+        return ClaudeLLMService(api_key=api_key or settings.claude_api_key)
 
     raise ValueError(
-        f"LLM_PROVIDER inválido: '{provider}'. Use 'claude' ou 'openai'."
+        f"LLM_PROVIDER inválido: '{effective_provider}'. Use 'claude' ou 'openai'."
     )
 
 

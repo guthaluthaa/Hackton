@@ -145,6 +145,16 @@ services:
       - RabbitMq__Password=${RABBITMQ_PASSWORD:-hackton123}
       - Seq__Url=http://seq:5341
 
+  frontend:
+    build:
+      context: ../src/frontend
+      dockerfile: Dockerfile
+    container_name: hackton-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+
   analysis-service:
     build:
       context: ../

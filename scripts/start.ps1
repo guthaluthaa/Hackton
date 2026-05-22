@@ -57,7 +57,7 @@ Write-Host "  All services are up!" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Endpoints:" -ForegroundColor White
-Write-Host "    Gateway API:       http://localhost:5000"
+Write-Host "    Gateway API:       http://localhost:5010"
 Write-Host "    Upload Service:    http://localhost:5001"
 Write-Host "    Orchestrator:      http://localhost:5002"
 Write-Host "    Report Service:    http://localhost:5003"

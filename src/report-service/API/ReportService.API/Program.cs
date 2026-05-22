@@ -15,6 +15,8 @@ builder.Host.UseSerilog((context, loggerConfig) =>
 {
     loggerConfig
         .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("ServiceName", "ReportService")
         .WriteTo.Console()
         .WriteTo.Seq(context.Configuration["Seq:Url"] ?? "http://seq:5341");
 });
@@ -63,13 +65,23 @@ using (var scope = app.Services.CreateScope())
     await db.Database.EnsureCreatedAsync();
 }
 
+app.UseSerilogRequestLogging();
+
 // Minimal API endpoints
-app.MapGet("/api/report/{jobId:guid}", async (Guid jobId, IMediator mediator) =>
+app.MapGet("/api/report/{jobId:guid}", async (Guid jobId, IMediator mediator, ILoggerFactory loggerFactory) =>
 {
+    var logger = loggerFactory.CreateLogger("ReportService.API");
+    logger.LogInformation("GET /api/report/{JobId} requested", jobId);
+
     var report = await mediator.Send(new GetReportByJobIdQuery(jobId));
 
     if (report is null)
+    {
+        logger.LogWarning("Report for JobId {JobId} not found", jobId);
         return Results.NotFound(new { message = $"Report for job {jobId} not found" });
+    }
+
+    logger.LogInformation("Report {ReportId} retrieved for JobId: {JobId}", report.Id, jobId);
 
     return Results.Ok(new
     {

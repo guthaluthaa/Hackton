@@ -2,13 +2,14 @@ import json
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 
 import aio_pika
 
+from app.models.analysis_result import AnalysisResult
+
 logger = logging.getLogger(__name__)
 
-# Convenção de nomes do MassTransit: "Namespace:TipoDoEvento"
 EXCHANGE_COMPLETED = "Shared.Events:AnalysisCompletedEvent"
 EXCHANGE_FAILED = "Shared.Events:AnalysisFailedEvent"
 
@@ -16,6 +17,47 @@ EXCHANGE_FAILED = "Shared.Events:AnalysisFailedEvent"
 class EventPublisher:
     def __init__(self, channel: aio_pika.abc.AbstractChannel):
         self._channel = channel
+
+    async def publish_completed_from_result(
+        self, job_id: str, result: AnalysisResult
+    ) -> None:
+        body = {
+            "jobId": job_id,
+            "status": "ANALYZED",
+            "components": result.components,
+            "risks": result.risks,
+            "recommendations": result.recommendations,
+            "securityFindings": [
+                {
+                    "category": f.category,
+                    "description": f.description,
+                    "severity": f.severity.value,
+                    "affectedComponent": f.affected_component,
+                }
+                for f in (result.security_findings or [])
+            ],
+            "scalabilityAssessments": [
+                {
+                    "component": a.component,
+                    "currentPattern": a.current_pattern.value,
+                    "bottleneckRisk": a.bottleneck_risk,
+                    "recommendation": a.recommendation,
+                }
+                for a in (result.scalability_assessments or [])
+            ],
+            "architectureType": result.architecture_type,
+            "overallRiskScore": result.overall_risk_score,
+            "completedAt": datetime.now(timezone.utc).isoformat(),
+        }
+        await self._publish(EXCHANGE_COMPLETED, body, "Shared.Events:AnalysisCompletedEvent")
+        logger.info(
+            f"AnalysisCompletedEvent publicado para job {job_id} | "
+            f"components={len(result.components)} risks={len(result.risks)} "
+            f"recommendations={len(result.recommendations)} "
+            f"security_findings={len(result.security_findings or [])} "
+            f"scalability={len(result.scalability_assessments or [])} "
+            f"risk_score={result.overall_risk_score}"
+        )
 
     async def publish_completed(
         self,
