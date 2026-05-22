@@ -6,7 +6,9 @@ public record UploadFileCommand(
     Stream FileStream,
     string FileName,
     string ContentType,
-    long FileSize
+    long FileSize,
+    string? LlmProvider,
+    string? LlmApiKey
 ) : IRequest<UploadFileResult>;
 
 public record UploadFileResult(Guid JobId, string FileName, string FilePath);

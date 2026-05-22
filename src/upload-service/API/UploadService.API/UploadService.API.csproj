@@ -23,9 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Application\UploadService.Application\UploadService.Application.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\UploadService.Infrastructure\UploadService.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\shared\Shared\Shared.csproj" />
+    <ProjectReference Include="../../Application/UploadService.Application/UploadService.Application.csproj" />
+    <ProjectReference Include="../../Infrastructure/UploadService.Infrastructure/UploadService.Infrastructure.csproj" />
+    <ProjectReference Include="../../../shared/Shared/Shared.csproj" />
   </ItemGroup>
 
 </Project>

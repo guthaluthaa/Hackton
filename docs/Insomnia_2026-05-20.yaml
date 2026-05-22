@@ -1,0 +1,92 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: My first collection
+meta:
+  id: wrk_a2cb875407f44e63bfe49e6867b5fc70
+  created: 1779328971326
+  modified: 1779328971326
+  description: ""
+collection:
+  - url: http://localhost:5010/api/upload
+    name: upload
+    meta:
+      id: req_90b00b85f3fc40a784f2e3c6196f2900
+      created: 1779329038863
+      modified: 1779330763512
+      isPrivate: false
+      description: ""
+      sortKey: -1779329038863
+    method: POST
+    body:
+      mimeType: multipart/form-data
+      params:
+        - name: file
+          fileName: /Users/alexandresampaio/Dev/workspace-python/Hackton/docs/arquiteturas-1.png
+          type: file
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:5010/api/status/10be834b-ab07-48db-8921-cc172aa89525
+    name: status
+    meta:
+      id: req_33357ae4baa24d1fb3b244ee38a1b380
+      created: 1779329910229
+      modified: 1779331182196
+      isPrivate: false
+      description: ""
+      sortKey: -1779329038763
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:5010/api/report/10be834b-ab07-48db-8921-cc172aa89525
+    name: report
+    meta:
+      id: req_01e90d3cb29c4e35ad28acb9a6ee0c09
+      created: 1779331379509
+      modified: 1779331394210
+      isPrivate: false
+      description: ""
+      sortKey: -1779329038663
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/12.5.0
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_01e0bf8c0f9f2c52691ac7820f10f807b9b786c6
+    created: 1779328971332
+    modified: 1779328971332
+environments:
+  name: Base Environment
+  meta:
+    id: env_01e0bf8c0f9f2c52691ac7820f10f807b9b786c6
+    created: 1779328971330
+    modified: 1779328971330
+    isPrivate: false

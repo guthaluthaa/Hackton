@@ -7,43 +7,43 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{C8E42992-5E42-0C2B-DBFE-AA848D06431C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "src\shared\Shared\Shared.csproj", "{AD44635E-BB4A-455D-ABB9-10706AA87BE0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "src/shared/Shared/Shared.csproj", "{AD44635E-BB4A-455D-ABB9-10706AA87BE0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway", "src\gateway\Gateway\Gateway.csproj", "{40E7380E-03A7-41B7-939F-828833AA492F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway", "src/gateway/Gateway/Gateway.csproj", "{40E7380E-03A7-41B7-939F-828833AA492F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.API", "src\upload-service\API\UploadService.API\UploadService.API.csproj", "{D256866C-1969-46B7-BB57-6222EB152B2B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.API", "src/upload-service/API/UploadService.API/UploadService.API.csproj", "{D256866C-1969-46B7-BB57-6222EB152B2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.Domain", "src\upload-service\Domain\UploadService.Domain\UploadService.Domain.csproj", "{3C674AAC-237F-4EE4-88EA-BDB28AD59EA1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.Domain", "src/upload-service/Domain/UploadService.Domain/UploadService.Domain.csproj", "{3C674AAC-237F-4EE4-88EA-BDB28AD59EA1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.Application", "src\upload-service\Application\UploadService.Application\UploadService.Application.csproj", "{7EA8D3B4-9D7F-45BA-93C1-25C3BF51EB98}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.Application", "src/upload-service/Application/UploadService.Application/UploadService.Application.csproj", "{7EA8D3B4-9D7F-45BA-93C1-25C3BF51EB98}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.Infrastructure", "src\upload-service\Infrastructure\UploadService.Infrastructure\UploadService.Infrastructure.csproj", "{5AB24B81-7DB4-478B-9289-8CEBC0FFF253}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.Infrastructure", "src/upload-service/Infrastructure/UploadService.Infrastructure/UploadService.Infrastructure.csproj", "{5AB24B81-7DB4-478B-9289-8CEBC0FFF253}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.API", "src\orchestrator-service\API\OrchestratorService.API\OrchestratorService.API.csproj", "{132B913E-6654-4FA0-A1DA-3D6D43379A35}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.API", "src/orchestrator-service/API/OrchestratorService.API/OrchestratorService.API.csproj", "{132B913E-6654-4FA0-A1DA-3D6D43379A35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.Domain", "src\orchestrator-service\Domain\OrchestratorService.Domain\OrchestratorService.Domain.csproj", "{5B6DB61F-0AD2-4261-805E-742D5FA5EABC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.Domain", "src/orchestrator-service/Domain/OrchestratorService.Domain/OrchestratorService.Domain.csproj", "{5B6DB61F-0AD2-4261-805E-742D5FA5EABC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.Application", "src\orchestrator-service\Application\OrchestratorService.Application\OrchestratorService.Application.csproj", "{0AF5FDBA-1E2B-4DAC-A07F-2A1AADAE82AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.Application", "src/orchestrator-service/Application/OrchestratorService.Application/OrchestratorService.Application.csproj", "{0AF5FDBA-1E2B-4DAC-A07F-2A1AADAE82AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.Infrastructure", "src\orchestrator-service\Infrastructure\OrchestratorService.Infrastructure\OrchestratorService.Infrastructure.csproj", "{1A3657AA-5C6E-4CF4-B7A5-3992EC46FEAD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.Infrastructure", "src/orchestrator-service/Infrastructure/OrchestratorService.Infrastructure/OrchestratorService.Infrastructure.csproj", "{1A3657AA-5C6E-4CF4-B7A5-3992EC46FEAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.API", "src\report-service\API\ReportService.API\ReportService.API.csproj", "{24318EA5-DD88-471A-B78E-53F57E8DAD05}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.API", "src/report-service/API/ReportService.API/ReportService.API.csproj", "{24318EA5-DD88-471A-B78E-53F57E8DAD05}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.Domain", "src\report-service\Domain\ReportService.Domain\ReportService.Domain.csproj", "{7BDCF06C-F351-487D-B400-5B5B44E9C07F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.Domain", "src/report-service/Domain/ReportService.Domain/ReportService.Domain.csproj", "{7BDCF06C-F351-487D-B400-5B5B44E9C07F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.Application", "src\report-service\Application\ReportService.Application\ReportService.Application.csproj", "{8DB9131F-5503-4FC3-BD73-47D91E47CB8A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.Application", "src/report-service/Application/ReportService.Application/ReportService.Application.csproj", "{8DB9131F-5503-4FC3-BD73-47D91E47CB8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.Infrastructure", "src\report-service\Infrastructure\ReportService.Infrastructure\ReportService.Infrastructure.csproj", "{FFD29748-C921-4F4A-BBA7-9F5E5F793072}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.Infrastructure", "src/report-service/Infrastructure/ReportService.Infrastructure/ReportService.Infrastructure.csproj", "{FFD29748-C921-4F4A-BBA7-9F5E5F793072}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.Tests", "tests\UploadService.Tests\UploadService.Tests.csproj", "{2B281C21-A6C4-41F5-90A5-691BB00BB732}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UploadService.Tests", "tests/UploadService.Tests/UploadService.Tests.csproj", "{2B281C21-A6C4-41F5-90A5-691BB00BB732}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.Tests", "tests\OrchestratorService.Tests\OrchestratorService.Tests.csproj", "{9EF37A26-3DC1-4DB6-B2E7-A0D7188EA7A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrchestratorService.Tests", "tests/OrchestratorService.Tests/OrchestratorService.Tests.csproj", "{9EF37A26-3DC1-4DB6-B2E7-A0D7188EA7A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.Tests", "tests\ReportService.Tests\ReportService.Tests.csproj", "{53525D1D-696E-4F5F-BE0A-02367CF207B0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportService.Tests", "tests/ReportService.Tests/ReportService.Tests.csproj", "{53525D1D-696E-4F5F-BE0A-02367CF207B0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway.Tests", "tests\Gateway.Tests\Gateway.Tests.csproj", "{A0D95069-A67F-49D7-8E6C-57DE3881B882}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway.Tests", "tests/Gateway.Tests/Gateway.Tests.csproj", "{A0D95069-A67F-49D7-8E6C-57DE3881B882}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -21,9 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Application\OrchestratorService.Application\OrchestratorService.Application.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\OrchestratorService.Infrastructure\OrchestratorService.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\shared\Shared\Shared.csproj" />
+    <ProjectReference Include="../../Application/OrchestratorService.Application/OrchestratorService.Application.csproj" />
+    <ProjectReference Include="../../Infrastructure/OrchestratorService.Infrastructure/OrchestratorService.Infrastructure.csproj" />
+    <ProjectReference Include="../../../shared/Shared/Shared.csproj" />
   </ItemGroup>
 
 </Project>

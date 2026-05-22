@@ -1,0 +1,84 @@
+name: Analysis Service CI
+
+on:
+  push:
+    branches: [master, feature/analysis-service]
+    paths:
+      - "src/analysis-service/**"
+      - ".github/workflows/analysis-service.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "src/analysis-service/**"
+      - ".github/workflows/analysis-service.yml"
+
+env:
+  PYTHON_VERSION: "3.12"
+  SERVICE_DIR: src/analysis-service
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: ${{ env.SERVICE_DIR }}/requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ${{ env.SERVICE_DIR }}/requirements-dev.txt
+          pip install ruff
+
+      - name: Ruff lint
+        run: ruff check ${{ env.SERVICE_DIR }}
+
+      - name: Ruff format check
+        run: ruff format --check ${{ env.SERVICE_DIR }}
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: ${{ env.SERVICE_DIR }}/requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ${{ env.SERVICE_DIR }}/requirements-dev.txt
+
+      - name: Run tests
+        working-directory: ${{ env.SERVICE_DIR }}
+        run: pytest tests/ -v --tb=short
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ env.SERVICE_DIR }}/Dockerfile
+          push: false
+          tags: analysis-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Xunit;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using ReportService.Application.Consumers;
 using ReportService.Domain.Entities;
@@ -13,11 +14,12 @@ public class GenerateReportCommandConsumerTests
 {
     private readonly IReportRepository _reportRepository = Substitute.For<IReportRepository>();
     private readonly IPublishEndpoint _publishEndpoint = Substitute.For<IPublishEndpoint>();
+    private readonly ILogger<GenerateReportCommandConsumer> _logger = Substitute.For<ILogger<GenerateReportCommandConsumer>>();
     private readonly GenerateReportCommandConsumer _consumer;
 
     public GenerateReportCommandConsumerTests()
     {
-        _consumer = new GenerateReportCommandConsumer(_reportRepository, _publishEndpoint);
+        _consumer = new GenerateReportCommandConsumer(_reportRepository, _publishEndpoint, _logger);
     }
 
     [Fact]

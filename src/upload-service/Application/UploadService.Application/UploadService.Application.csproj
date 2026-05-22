@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Domain\UploadService.Domain\UploadService.Domain.csproj" />
-    <ProjectReference Include="..\..\..\shared\Shared\Shared.csproj" />
+    <ProjectReference Include="../../Domain/UploadService.Domain/UploadService.Domain.csproj" />
+    <ProjectReference Include="../../../shared/Shared/Shared.csproj" />
   </ItemGroup>
 
 </Project>

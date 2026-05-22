@@ -13,9 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\shared\Shared\Shared.csproj" />
-    <ProjectReference Include="..\..\Domain\ReportService.Domain\ReportService.Domain.csproj" />
-    <ProjectReference Include="..\..\Application\ReportService.Application\ReportService.Application.csproj" />
+    <ProjectReference Include="../../../shared/Shared/Shared.csproj" />
+    <ProjectReference Include="../../Domain/ReportService.Domain/ReportService.Domain.csproj" />
+    <ProjectReference Include="../../Application/ReportService.Application/ReportService.Application.csproj" />
   </ItemGroup>
 
 </Project>

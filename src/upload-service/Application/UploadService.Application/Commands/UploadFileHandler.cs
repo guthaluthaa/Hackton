@@ -1,5 +1,6 @@
 using MassTransit;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Shared.Events;
 using UploadService.Application.Interfaces;
 using UploadService.Domain.Entities;
@@ -12,37 +13,43 @@ public class UploadFileHandler : IRequestHandler<UploadFileCommand, UploadFileRe
     private readonly IStorageService _storageService;
     private readonly IUploadJobRepository _uploadJobRepository;
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ILogger<UploadFileHandler> _logger;
 
     public UploadFileHandler(
         IStorageService storageService,
         IUploadJobRepository uploadJobRepository,
-        IPublishEndpoint publishEndpoint)
+        IPublishEndpoint publishEndpoint,
+        ILogger<UploadFileHandler> logger)
     {
         _storageService = storageService;
         _uploadJobRepository = uploadJobRepository;
         _publishEndpoint = publishEndpoint;
+        _logger = logger;
     }
 
     public async Task<UploadFileResult> Handle(UploadFileCommand request, CancellationToken cancellationToken)
     {
-        // Upload file to MinIO
+        _logger.LogInformation("Processing upload for {FileName} ({FileSize} bytes, {ContentType})",
+            request.FileName, request.FileSize, request.ContentType);
+
         var filePath = await _storageService.UploadFileAsync(
             request.FileStream,
             request.FileName,
             request.ContentType,
             cancellationToken);
 
-        // Create domain entity
+        _logger.LogInformation("File stored at {FilePath}", filePath);
+
         var uploadJob = UploadJob.Create(
             request.FileName,
             filePath,
             request.ContentType,
             request.FileSize);
 
-        // Persist to database
         await _uploadJobRepository.AddAsync(uploadJob, cancellationToken);
 
-        // Publish event
+        _logger.LogInformation("UploadJob created with JobId: {JobId}", uploadJob.Id);
+
         await _publishEndpoint.Publish(new JobCreatedEvent
         {
             JobId = uploadJob.Id,
@@ -50,8 +57,12 @@ public class UploadFileHandler : IRequestHandler<UploadFileCommand, UploadFileRe
             FilePath = uploadJob.FilePath,
             ContentType = uploadJob.ContentType,
             FileSize = uploadJob.FileSize,
+            LlmProvider = request.LlmProvider ?? string.Empty,
+            LlmApiKey = request.LlmApiKey ?? string.Empty,
             CreatedAt = uploadJob.CreatedAt
         }, cancellationToken);
+
+        _logger.LogInformation("Published JobCreatedEvent for JobId: {JobId}", uploadJob.Id);
 
         return new UploadFileResult(uploadJob.Id, uploadJob.FileName, uploadJob.FilePath);
     }

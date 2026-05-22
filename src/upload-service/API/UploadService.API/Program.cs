@@ -14,6 +14,8 @@ builder.Host.UseSerilog((context, loggerConfig) =>
 {
     loggerConfig
         .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("ServiceName", "UploadService")
         .WriteTo.Console()
         .WriteTo.Seq(context.Configuration["Seq:Url"] ?? "http://localhost:5341");
 });
@@ -64,19 +66,29 @@ using (var scope = app.Services.CreateScope())
     await db.Database.EnsureCreatedAsync();
 }
 
+app.UseSerilogRequestLogging();
+
 // Minimal API endpoint
-app.MapPost("/api/upload", async (IFormFile file, IMediator mediator, IValidator<UploadFileCommand> validator) =>
+app.MapPost("/api/upload", async (HttpRequest httpRequest, IMediator mediator, IValidator<UploadFileCommand> validator) =>
 {
+    var form = await httpRequest.ReadFormAsync();
+    var file = form.Files.GetFile("file");
+
     if (file is null || file.Length == 0)
     {
         return Results.BadRequest(new { Error = "No file provided." });
     }
 
+    var provider = form["provider"].FirstOrDefault() ?? string.Empty;
+    var apiKey = form["apiKey"].FirstOrDefault() ?? string.Empty;
+
     var command = new UploadFileCommand(
         FileStream: file.OpenReadStream(),
         FileName: file.FileName,
         ContentType: file.ContentType,
-        FileSize: file.Length
+        FileSize: file.Length,
+        LlmProvider: provider,
+        LlmApiKey: apiKey
     );
 
     var validationResult = await validator.ValidateAsync(command);
