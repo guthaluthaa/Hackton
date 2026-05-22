@@ -10,31 +10,10 @@ Plataforma de microserviços para processamento e análise de arquivos, constru�
 
 ### Pré-requisitos
 
-- Windows 10/11
-- [Docker Desktop para Windows](https://www.docker.com/products/docker-desktop/) instalado e rodando
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando
 - Chave de API: [OpenAI](https://platform.openai.com/api-keys) (GPT-4o) **ou** [Anthropic](https://console.anthropic.com) (Claude)
 
-### 1. Configurar a API Key
-
-```bash
-# Copiar template de variáveis de ambiente
-cp .env.example docker/.env
-```
-
-Edite `docker/.env` e preencha **apenas** a chave do provedor escolhido:
-
-```env
-# Escolha: "openai" ou "claude"
-LLM_PROVIDER=openai
-
-# Se escolheu openai:
-OPENAI_API_KEY=sk-proj-sua-chave-aqui
-
-# Se escolheu claude:
-CLAUDE_API_KEY=sk-ant-sua-chave-aqui
-```
-
-### 2. Subir Tudo com Um Comando
+### 1. Subir Tudo com Um Comando
 
 **PowerShell:**
 ```powershell
@@ -46,9 +25,11 @@ CLAUDE_API_KEY=sk-ant-sua-chave-aqui
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-> O script automaticamente: cria o `.env` se não existir, aguarda a infraestrutura ficar saudável (PostgreSQL, RabbitMQ, MinIO), e sobe todos os microserviços incluindo o **Analysis Service (IA)**.
+> O script automaticamente: aguarda a infraestrutura ficar saudável (PostgreSQL, RabbitMQ, MinIO) e sobe todos os microserviços incluindo o **Analysis Service (IA)**.
 
-### 3. Verificar se Tudo Subiu
+### 2. Verificar se Tudo Subiu / Testar o Fluxo Completo
+
+Acesse o frontend em **http://localhost:3000** para fazer upload de diagramas, acompanhar o status e visualizar relatórios.
 
 ```bash
 # Health check do Gateway
@@ -58,20 +39,7 @@ curl http://localhost:5010/health
 docker compose -f docker/docker-compose.yml ps
 ```
 
-### 4. Testar o Fluxo Completo
-
-```bash
-# Upload de um diagrama
-curl -X POST http://localhost:5010/api/upload -F "file=@seu-diagrama.png"
-
-# Consultar status (use o jobId retornado)
-curl http://localhost:5010/api/status/{jobId}
-
-# Obter relatório (quando status = "Analyzed")
-curl http://localhost:5010/api/report/{jobId}
-```
-
-### 5. Parar Tudo
+### 3. Parar Tudo
 
 **PowerShell:**
 ```powershell
