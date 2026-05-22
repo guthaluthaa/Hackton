@@ -20,7 +20,9 @@ public class UploadFileCommandValidatorTests
             FileStream: Stream.Null,
             FileName: fileName,
             ContentType: "application/octet-stream",
-            FileSize: 1024);
+            FileSize: 1024,
+            LlmProvider: null,
+            LlmApiKey: null);
 
         var result = _validator.Validate(command);
 
@@ -38,7 +40,9 @@ public class UploadFileCommandValidatorTests
             FileStream: Stream.Null,
             FileName: fileName,
             ContentType: "application/octet-stream",
-            FileSize: 1024);
+            FileSize: 1024,
+            LlmProvider: null,
+            LlmApiKey: null);
 
         var result = _validator.Validate(command);
 

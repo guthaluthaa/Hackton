@@ -44,11 +44,15 @@ public class JobCreatedEventConsumerTests
         await _consumer.Consume(context);
 
         await _jobRepository.Received(1).AddAsync(
-            Arg.Is<Job>(j => j.Id == jobId && j.Status == JobStatus.Received),
+            Arg.Is<Job>(j => j.Id == jobId),
             Arg.Any<CancellationToken>());
 
         await _publishEndpoint.Received(1).Publish(
             Arg.Is<AnalysisRequestedEvent>(e => e.JobId == jobId),
+            Arg.Any<CancellationToken>());
+
+        await _jobRepository.Received(1).UpdateAsync(
+            Arg.Is<Job>(j => j.Id == jobId && j.Status == JobStatus.Processing),
             Arg.Any<CancellationToken>());
     }
 
