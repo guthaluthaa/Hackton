@@ -6,6 +6,7 @@ using ReportService.Application.Queries;
 using ReportService.Infrastructure;
 using ReportService.Infrastructure.Persistence;
 using Serilog;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,7 +67,19 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/api/report/{jobId:guid}", async (Guid jobId, IMediator mediator) =>
 {
     var report = await mediator.Send(new GetReportByJobIdQuery(jobId));
-    return report is not null ? Results.Ok(report) : Results.NotFound();
+
+    if (report is null)
+        return Results.NotFound(new { message = $"Report for job {jobId} not found" });
+
+    return Results.Ok(new
+    {
+        report.Id,
+        report.JobId,
+        Components      = JsonSerializer.Deserialize<List<string>>(report.Components),
+        Risks           = JsonSerializer.Deserialize<List<string>>(report.Risks),
+        Recommendations = JsonSerializer.Deserialize<List<string>>(report.Recommendations),
+        report.CreatedAt
+    });
 });
 
 app.MapGet("/health", () => Results.Ok("Healthy"));
