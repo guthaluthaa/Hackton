@@ -75,40 +75,7 @@ docker compose -f docker/docker-compose.yml up -d --no-deps --force-recreate ana
 
 ## Arquitetura
 
-```
-                                    ┌──────────────┐
-                                    │    MinIO      │
-                                    │ (Blob Storage)│
-                                    └──────┬───────┘
-                                  Save file│   │Get file
-                                           │   │
-┌──────────┐    ┌─────────────┐    ┌───────▼───┴───┐         ┌─────────────────┐
-│          │    │  API Gateway │    │    Upload     │         │ Analysis Service│
-│ Frontend │───▶│  (YARP Proxy)│───▶│   Service    │         │  (Python + LLM) │
-│  :3000   │    │    :5010     │    │    :5001     │         │  Claude/OpenAI  │
-└──────────┘    └─────────────┘    └───────┬───────┘         └────────┬────────┘
-                                           │                          │
-                                           │ JobCreatedEvent          │ AnalysisCompletedEvent
-                                           ▼                          │ AnalysisFailedEvent
-                              ┌────────────────────────────┐          │
-                              │        RabbitMQ            │◀─────────┘
-                              │     (Message Broker)       │
-                              └─────┬──────────────┬───────┘
-                                    │              │
-                  AnalysisRequested  │              │ GenerateReportCommand
-                  Event             │              │
-                                    ▼              ▼
-                          ┌─────────────────┐  ┌─────────────────┐
-                          │  Orchestrator   │  │  Report Service  │
-                          │   Service :5002 │  │     :5003       │
-                          └────────┬────────┘  └────────┬────────┘
-                                   │                    │
-                                   ▼                    ▼
-          ┌───────────┐   ┌───────────────┐   ┌───────────────┐
-          │ upload_db │   │orchestrator_db│   │  report_db    │
-          └───────────┘   └───────────────┘   └───────────────┘
-          └────────────── PostgreSQL 16 (1 instância) ──────────────┘
-```
+<img width="986" height="721" alt="image" src="https://github.com/user-attachments/assets/88c706d9-b009-44ba-bd3f-938f615bfe16" />
 
 ---
 
