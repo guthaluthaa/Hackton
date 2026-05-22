@@ -73,6 +73,119 @@ docker compose -f docker/docker-compose.yml up -d --no-deps --force-recreate ana
 
 ---
 
+## Arquitetura
+
+```
+                                    ┌──────────────┐
+                                    │    MinIO      │
+                                    │ (Blob Storage)│
+                                    └──────┬───────┘
+                                  Save file│   │Get file
+                                           │   │
+┌──────────┐    ┌─────────────┐    ┌───────▼───┴───┐         ┌─────────────────┐
+│          │    │  API Gateway │    │    Upload     │         │ Analysis Service│
+│ Frontend │───▶│  (YARP Proxy)│───▶│   Service    │         │  (Python + LLM) │
+│  :3000   │    │    :5010     │    │    :5001     │         │  Claude/OpenAI  │
+└──────────┘    └─────────────┘    └───────┬───────┘         └────────┬────────┘
+                                           │                          │
+                                           │ JobCreatedEvent          │ AnalysisCompletedEvent
+                                           ▼                          │ AnalysisFailedEvent
+                              ┌────────────────────────────┐          │
+                              │        RabbitMQ            │◀─────────┘
+                              │     (Message Broker)       │
+                              └─────┬──────────────┬───────┘
+                                    │              │
+                  AnalysisRequested  │              │ GenerateReportCommand
+                  Event             │              │
+                                    ▼              ▼
+                          ┌─────────────────┐  ┌─────────────────┐
+                          │  Orchestrator   │  │  Report Service  │
+                          │   Service :5002 │  │     :5003       │
+                          └────────┬────────┘  └────────┬────────┘
+                                   │                    │
+                                   ▼                    ▼
+          ┌───────────┐   ┌───────────────┐   ┌───────────────┐
+          │ upload_db │   │orchestrator_db│   │  report_db    │
+          └───────────┘   └───────────────┘   └───────────────┘
+          └────────────── PostgreSQL 16 (1 instância) ──────────────┘
+```
+
+---
+
+## Fluxo de Eventos
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           FLUXO COMPLETO DO PIPELINE                            │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  1. POST /api/upload                                                            │
+│     └──▶ Upload Service salva arquivo no MinIO + metadata no upload_db          │
+│          └──▶ Publica: JobCreatedEvent                                          │
+│                                                                                 │
+│  2. JobCreatedEvent                                                             │
+│     └──▶ Orchestrator cria Job (status: Received) no orchestrator_db            │
+│          └──▶ Publica: AnalysisRequestedEvent (status → Processing)             │
+│                                                                                 │
+│  3. AnalysisRequestedEvent                                                      │
+│     └──▶ Analysis Service:                                                      │
+│          ├── Baixa arquivo do MinIO                                             │
+│          ├── Converte PDF → imagens (se necessário)                             │
+│          ├── Envia para LLM (Claude/OpenAI) com prompt estruturado              │
+│          ├── Aplica guardrails (Pydantic + heurísticas + aderência semântica)   │
+│          └──▶ Publica: AnalysisCompletedEvent ou AnalysisFailedEvent            │
+│                                                                                 │
+│  4. AnalysisCompletedEvent                                                      │
+│     └──▶ Orchestrator atualiza Job (status: Analyzed)                           │
+│          └──▶ Publica: GenerateReportCommand                                    │
+│                                                                                 │
+│     AnalysisFailedEvent                                                         │
+│     └──▶ Orchestrator atualiza Job (status: Failed, errorMessage)               │
+│                                                                                 │
+│  5. GenerateReportCommand                                                       │
+│     └──▶ Report Service serializa resultado em JSON e persiste no report_db     │
+│          └──▶ Publica: ReportGeneratedEvent                                     │
+│                                                                                 │
+│  6. ReportGeneratedEvent                                                        │
+│     └──▶ Orchestrator marca Job como concluído                                  │
+│                                                                                 │
+│  7. GET /api/status/{jobId}  → Consulta estado atual do job                     │
+│  8. GET /api/report/{jobId}  → Retorna relatório completo                       │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Mapa de Eventos
+
+| Evento | Producer | Consumer | Payload principal |
+|--------|----------|----------|-------------------|
+| `JobCreatedEvent` | Upload Service | Orchestrator | JobId, FileName, FilePath, ContentType, FileSize, LlmProvider, LlmApiKey |
+| `AnalysisRequestedEvent` | Orchestrator | Analysis Service | JobId, FilePath, LlmProvider, LlmApiKey |
+| `AnalysisCompletedEvent` | Analysis Service | Orchestrator | JobId, Components, Risks, Recommendations, SecurityFindings, ScalabilityAssessments, ArchitectureType, OverallRiskScore |
+| `AnalysisFailedEvent` | Analysis Service | Orchestrator | JobId, Reason |
+| `GenerateReportCommand` | Orchestrator | Report Service | JobId, Components, Risks, Recommendations |
+| `ReportGeneratedEvent` | Report Service | Orchestrator | JobId, ReportId, GeneratedAt |
+
+---
+
+## Decisões de Arquitetura
+
+| Decisão | Escolha | Justificativa |
+|---------|---------|---------------|
+| **Comunicação entre serviços** | Mensageria assíncrona (RabbitMQ) | Desacoplamento total; cada serviço opera independente; resiliência a falhas temporárias |
+| **Padrão de orquestração** | Orchestrator centralizado | Controle de estado do fluxo em um único ponto; facilita rastreabilidade e tratamento de falhas |
+| **Banco de dados** | Database-per-service (3 DBs lógicos, 1 instância PostgreSQL) | Isolamento de domínio; cada serviço é dono dos seus dados; simplifica deploy no MVP com instância única |
+| **Object Storage** | MinIO (S3-compatible) | Arquivos binários não pertencem ao banco relacional; MinIO é drop-in replacement para AWS S3 em produção |
+| **Analysis Service stateless** | Sem banco próprio | Não precisa guardar estado; recebe evento, processa e publica resultado — facilita escalabilidade horizontal |
+| **API Gateway** | YARP (reverse proxy .NET) | Single entry point; roteamento centralizado; mesmo ecossistema .NET; suporte nativo a health checks |
+| **Serialização de mensagens** | MassTransit envelope format | Compatibilidade entre .NET (MassTransit) e Python (aio-pika); schema tipado via contratos compartilhados |
+| **Clean Architecture (.NET)** | API / Application / Domain / Infrastructure | Separação de responsabilidades; testabilidade; inversão de dependências |
+| **LLM provider plugável** | Interface abstrata (Claude ou OpenAI) | Evita vendor lock-in; permite trocar ou comparar provedores sem alterar o pipeline |
+
+---
+
 ## Justificativa do Modelo de IA
 
 ### Modelo Escolhido: GPT-4o (padrão) / Claude Opus (alternativa)
@@ -124,116 +237,11 @@ docker compose -f docker/docker-compose.yml up -d --no-deps --force-recreate ana
 
 ---
 
-## Arquitetura
-
-```
-                                    ┌──────────────┐
-                                    │    MinIO      │
-                                    │ (Blob Storage)│
-                                    └──────┬───────┘
-                                  Save file│   │Get file
-                                           │   │
-┌──────────┐    ┌─────────────┐    ┌───────▼───┴───┐         ┌─────────────────┐
-│          │    │  API Gateway │    │    Upload     │         │ Analysis Service│
-│ Frontend │───▶│  (YARP Proxy)│───▶│   Service    │         │  (Python + LLM) │
-│  :3000   │    │    :5010     │    │    :5001     │         │  Claude/OpenAI  │
-└──────────┘    └─────────────┘    └───────┬───────┘         └────────┬────────┘
-                                           │                          │
-                                           │ JobCreatedEvent          │ AnalysisCompletedEvent
-                                           ▼                          │ AnalysisFailedEvent
-                              ┌────────────────────────────┐          │
-                              │        RabbitMQ            │◀─────────┘
-                              │     (Message Broker)       │
-                              └─────┬──────────────┬───────┘
-                                    │              │
-                  AnalysisRequested  │              │ GenerateReportCommand
-                  Event             │              │
-                                    ▼              ▼
-                          ┌─────────────────┐  ┌─────────────────┐
-                          │  Orchestrator   │  │  Report Service  │
-                          │   Service :5002 │  │     :5003       │
-                          └────────┬────────┘  └────────┬────────┘
-                                   │                    │
-                                   ▼                    ▼
-          ┌───────────┐   ┌───────────────┐   ┌───────────────┐
-          │ upload_db │   │orchestrator_db│   │  report_db    │
-          └───────────┘   └───────────────┘   └───────────────┘
-          └────────────── PostgreSQL 16 (1 instância) ──────────────┘
-```
-
-### Decisões de Arquitetura
-
-| Decisão | Escolha | Justificativa |
-|---------|---------|---------------|
-| **Comunicação entre serviços** | Mensageria assíncrona (RabbitMQ) | Desacoplamento total; cada serviço opera independente; resiliência a falhas temporárias |
-| **Padrão de orquestração** | Orchestrator centralizado | Controle de estado do fluxo em um único ponto; facilita rastreabilidade e tratamento de falhas |
-| **Banco de dados** | Database-per-service (3 DBs lógicos, 1 instância PostgreSQL) | Isolamento de domínio; cada serviço é dono dos seus dados; simplifica deploy no MVP com instância única |
-| **Object Storage** | MinIO (S3-compatible) | Arquivos binários não pertencem ao banco relacional; MinIO é drop-in replacement para AWS S3 em produção |
-| **Analysis Service stateless** | Sem banco próprio | Não precisa guardar estado; recebe evento, processa e publica resultado — facilita escalabilidade horizontal |
-| **API Gateway** | YARP (reverse proxy .NET) | Single entry point; roteamento centralizado; mesmo ecossistema .NET; suporte nativo a health checks |
-| **Serialização de mensagens** | MassTransit envelope format | Compatibilidade entre .NET (MassTransit) e Python (aio-pika); schema tipado via contratos compartilhados |
-| **Clean Architecture (.NET)** | API / Application / Domain / Infrastructure | Separação de responsabilidades; testabilidade; inversão de dependências |
-| **LLM provider plugável** | Interface abstrata (Claude ou OpenAI) | Evita vendor lock-in; permite trocar ou comparar provedores sem alterar o pipeline |
-
-### Fluxo de Eventos
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           FLUXO COMPLETO DO PIPELINE                            │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  1. POST /api/upload                                                            │
-│     └──▶ Upload Service salva arquivo no MinIO + metadata no upload_db          │
-│          └──▶ Publica: JobCreatedEvent                                          │
-│                                                                                 │
-│  2. JobCreatedEvent                                                             │
-│     └──▶ Orchestrator cria Job (status: Received) no orchestrator_db            │
-│          └──▶ Publica: AnalysisRequestedEvent (status → Processing)             │
-│                                                                                 │
-│  3. AnalysisRequestedEvent                                                      │
-│     └──▶ Analysis Service:                                                      │
-│          ├── Baixa arquivo do MinIO                                             │
-│          ├── Converte PDF → imagens (se necessário)                             │
-│          ├── Envia para LLM (Claude/OpenAI) com prompt estruturado              │
-│          ├── Aplica guardrails (Pydantic + heurísticas + aderência semântica)   │
-│          └──▶ Publica: AnalysisCompletedEvent ou AnalysisFailedEvent            │
-│                                                                                 │
-│  4. AnalysisCompletedEvent                                                      │
-│     └──▶ Orchestrator atualiza Job (status: Analyzed)                           │
-│          └──▶ Publica: GenerateReportCommand                                    │
-│                                                                                 │
-│     AnalysisFailedEvent                                                         │
-│     └──▶ Orchestrator atualiza Job (status: Failed, errorMessage)               │
-│                                                                                 │
-│  5. GenerateReportCommand                                                       │
-│     └──▶ Report Service serializa resultado em JSON e persiste no report_db     │
-│          └──▶ Publica: ReportGeneratedEvent                                     │
-│                                                                                 │
-│  6. ReportGeneratedEvent                                                        │
-│     └──▶ Orchestrator marca Job como concluído                                  │
-│                                                                                 │
-│  7. GET /api/status/{jobId}  → Consulta estado atual do job                     │
-│  8. GET /api/report/{jobId}  → Retorna relatório completo                       │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Mapa de Eventos
-
-| Evento | Producer | Consumer | Payload principal |
-|--------|----------|----------|-------------------|
-| `JobCreatedEvent` | Upload Service | Orchestrator | JobId, FileName, FilePath, ContentType, FileSize, LlmProvider, LlmApiKey |
-| `AnalysisRequestedEvent` | Orchestrator | Analysis Service | JobId, FilePath, LlmProvider, LlmApiKey |
-| `AnalysisCompletedEvent` | Analysis Service | Orchestrator | JobId, Components, Risks, Recommendations, SecurityFindings, ScalabilityAssessments, ArchitectureType, OverallRiskScore |
-| `AnalysisFailedEvent` | Analysis Service | Orchestrator | JobId, Reason |
-| `GenerateReportCommand` | Orchestrator | Report Service | JobId, Components, Risks, Recommendations |
-| `ReportGeneratedEvent` | Report Service | Orchestrator | JobId, ReportId, GeneratedAt |
-
-### Modelo de Dados (PostgreSQL)
+## Modelo de Dados (PostgreSQL)
 
 **1 instância PostgreSQL 16** com **3 databases isolados** (padrão database-per-service):
 
-#### `upload_db` — Tabela `UploadJobs`
+### `upload_db` — Tabela `UploadJobs`
 
 | Campo | Tipo | Constraint |
 |-------|------|------------|
@@ -246,7 +254,7 @@ docker compose -f docker/docker-compose.yml up -d --no-deps --force-recreate ana
 | `CreatedAt` | DateTime | NOT NULL |
 | `UpdatedAt` | DateTime | NOT NULL |
 
-#### `orchestrator_db` — Tabela `Jobs`
+### `orchestrator_db` — Tabela `Jobs`
 
 | Campo | Tipo | Constraint |
 |-------|------|------------|
@@ -258,7 +266,7 @@ docker compose -f docker/docker-compose.yml up -d --no-deps --force-recreate ana
 | `UpdatedAt` | DateTime | NOT NULL |
 | `ErrorMessage` | string(2000) | nullable |
 
-#### `report_db` — Tabela `Reports`
+### `report_db` — Tabela `Reports`
 
 | Campo | Tipo | Constraint |
 |-------|------|------------|
@@ -269,10 +277,12 @@ docker compose -f docker/docker-compose.yml up -d --no-deps --force-recreate ana
 | `Recommendations` | string (JSON) | NOT NULL |
 | `CreatedAt` | DateTime | NOT NULL |
 
-#### Analysis Service — **Sem banco de dados** (stateless)
+### Analysis Service — **Sem banco de dados** (stateless)
 Acessa apenas o MinIO para download de arquivos. Todo estado é gerenciado pelo Orchestrator via eventos.
 
-### Segurança da API Key do Usuário
+---
+
+## Segurança da API Key do Usuário
 
 A chave de API fornecida pelo usuário no frontend:
 
@@ -282,7 +292,9 @@ A chave de API fornecida pelo usuário no frontend:
 - **Cada requisição** usa a chave apenas para aquela análise específica
 - **Nunca é logada** — os logs registram apenas o provider escolhido, nunca a chave
 
-### Status do Job
+---
+
+## Status do Job
 
 | Status | Descrição |
 |--------|-----------|
